@@ -8,6 +8,14 @@ class Token(NamedTuple):
 
 r"(?P<token>[\(\)])|(?P<symbol>[a-zA-Z]\w*)|(?P<number>\d+(?:\.\d+)?)"
 
+tokens = [
+    "\'",
+    "\".*\"",
+    "\.{3}",
+    "\.\.\.",
+    "[a-zA-Z+-\.\/<=>!?:$%_&~\^][a-zA-Z+-\.\/<=>!?:$%_&~\^0-9]*",
+    "[\/+-]",
+]
 
 def lex(code: str) -> Iterable[Token]:
     """
@@ -17,19 +25,18 @@ def lex(code: str) -> Iterable[Token]:
 
     # symbol : regex
     patterns = {
-        'n-comentario': ';;.*$',
+        'n-comentario': ';.*$',
         'LPAR': r'\(',
         'RPAR': r'\)',
         'STRING': r'\".*\"',
-        'BOOL': '#[tf]',
-        'CHAR': '#\\\\\w+',
-        'NUMBER': r'[+-]?\d+(?:\.\d+)?',
-        'NAME': r"\'|\".*\"|\.{3}|[a-zA-Z\.\%][\w\-\?\>!]*|[\/+-]",
+        'BOOL': r'#[tf]',
+        'CHAR': r'#\\[\w\\]+',
+        'NUMBER': r'(?:#[eibodx])?[+-]?\d+(?:\.\d+)?',
+        'NAME': rf"{'|'.join(tokens)}",
     }
 
-    print(f"Code: {code}")
-
     pattern = ''
+
     for key, value in patterns.items():
 
         if re.match('n\-\w+', key):
@@ -38,20 +45,25 @@ def lex(code: str) -> Iterable[Token]:
             pattern += f'(?P<{key}>{value})|'
 
     pattern = pattern[:-1]
-
-    print(pattern)
-
     pattern = re.compile(pattern)
+
 
     result = [ ]
 
     for each in pattern.finditer(code):
-
         if each.lastgroup != None:
             result.append(Token(each.lastgroup, each.group()))
-        #print(each.lastgroup)
-        #print(each)
 
-    print(result)
     return result
-    #return [Token('INVALIDA', 'valor inválido')]
+
+
+if __name__ == '__main__': 
+
+    # Just for try some tests besides pytest
+    with open('code.scheme') as code:
+
+        for line in code.readlines():
+
+            tokenized_code = lex(line)
+
+            [print(token) for token in tokenized_code]
